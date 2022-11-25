@@ -168,14 +168,7 @@ abstract class EHentai(
         //when attempting to search with no genres selected, will auto select all genres
         (filters.find { it is GenreGroup } as UriGroup<*>).state.let {
             //variable to to check is any genres are selected
-            var check = false
-            for (i in it) {
-                //if any genres are selected by the user, do nothing
-                if ((i as GenreOption).state) {
-                    check = true
-                    break
-                }
-            }
+            val check = it.any { option -> option.state }  // or it.any(GenreOption::state)
             //if no genres are selected by the user set all genres to on
             if (!check) {
                 for (i in it) {
