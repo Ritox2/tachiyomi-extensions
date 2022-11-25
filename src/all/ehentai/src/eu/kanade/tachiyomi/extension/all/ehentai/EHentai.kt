@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.SharedPreferences
 import android.net.Uri
-import android.util.Log
 import androidx.preference.CheckBoxPreference
 import androidx.preference.PreferenceScreen
 import eu.kanade.tachiyomi.network.GET
@@ -166,15 +165,18 @@ abstract class EHentai(
             .joinToString(",")
             .let { if (it.isNotEmpty()) ",$it" else it }
         uri.appendQueryParameter("f_search", modifiedQuery)
-
+        //when attempting to search with no genres selected, will auto select all genres
         (filters.find { it is GenreGroup } as UriGroup<*>).state.let {
+            //variable to to check is any genres are selected
             var check = false
             for (i in it) {
+                //if any genres are selected by the user, do nothing
                 if ((i as GenreOption).state) {
                     check = true
                     break
                 }
             }
+            //if no genres are selected by the user set all genres to on
             if (!check) {
                 for (i in it) {
                     (i as GenreOption).state = true
@@ -185,10 +187,11 @@ abstract class EHentai(
         filters.forEach {
             if (it is UriFilter) it.addToUri(uri)
         }
+
         if (uri.toString().contains("f_spf") || uri.toString().contains("f_spt")) {
             if (page > 1) uri.appendQueryParameter("from", lastMangaId)
         }
-        Log.i("search", uri.toString())
+
         return exGet(uri.toString(), page)
     }
 
