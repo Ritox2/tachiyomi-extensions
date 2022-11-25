@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.SharedPreferences
 import android.net.Uri
+import android.util.Log
 import androidx.preference.CheckBoxPreference
 import androidx.preference.PreferenceScreen
 import eu.kanade.tachiyomi.network.GET
@@ -165,13 +166,29 @@ abstract class EHentai(
             .joinToString(",")
             .let { if (it.isNotEmpty()) ",$it" else it }
         uri.appendQueryParameter("f_search", modifiedQuery)
+
+        (filters.find { it is GenreGroup } as UriGroup<*>).state.let {
+            var check = false
+            for (i in it) {
+                if ((i as GenreOption).state) {
+                    check = true
+                    break
+                }
+            }
+            if (!check) {
+                for (i in it) {
+                    (i as GenreOption).state = true
+                }
+            }
+        }
+
         filters.forEach {
             if (it is UriFilter) it.addToUri(uri)
         }
         if (uri.toString().contains("f_spf") || uri.toString().contains("f_spt")) {
             if (page > 1) uri.appendQueryParameter("from", lastMangaId)
         }
-
+        Log.i("search", uri.toString())
         return exGet(uri.toString(), page)
     }
 
@@ -182,7 +199,7 @@ abstract class EHentai(
     override fun latestUpdatesParse(response: Response) = genericMangaParse(response)
 
     private fun exGet(url: String, page: Int? = null, additionalHeaders: Headers? = null, cache: Boolean = true): Request {
-        //pages no longer exist, if app attempts to go to the first page after a request, do not include the page append
+        // pages no longer exist, if app attempts to go to the first page after a request, do not include the page append
         val pageIndex = if (page == 1) null else page
         return GET(
             pageIndex?.let {
@@ -373,7 +390,7 @@ abstract class EHentai(
         EnforceLanguageFilter(getEnforceLanguagePref()),
         Watched(),
         GenreGroup(),
-        TagFilter("Misc Tags", triStateBoxesFrom(miscTags), ""),
+        TagFilter("Misc Tags", triStateBoxesFrom(miscTags), "other"),
         TagFilter("Female Tags", triStateBoxesFrom(femaleTags), "female"),
         TagFilter("Male Tags", triStateBoxesFrom(maleTags), "male"),
         AdvancedGroup()
